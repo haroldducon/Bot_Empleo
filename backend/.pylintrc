@@ -1,0 +1,5 @@
+[MESSAGES CONTROL]
+disable=missing-module-docstring,missing-class-docstring,missing-function-docstring,missing-final-newline,unused-argument,broad-exception-caught,too-few-public-methods,not-callable
+
+[TYPECHECK]
+generated-members=func.*

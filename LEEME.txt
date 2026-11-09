@@ -1,0 +1,29 @@
+ACTUALIZACIÓN — NEXO LABORAL
+
+MAGNETO EMPLEO (BETA PERSONAL)
+La fuente Magneto busca por rutas públicas que incluyen cargo y ciudad, usando Playwright/Chromium. Usa un contexto temporal sin inicio de sesión ni perfil persistente; los cargos se consultan secuencialmente con dos segundos entre rutas. Solo devuelve ofertas con fecha de publicación verificable de hasta 5 días (120 horas); las antiguas o sin fecha asociable se excluyen. La fecha se lee de los datos embebidos del listado, sin abrir las páginas individuales de las vacantes. Conserva el enlace original. Ante HTTP 403, 429 o 500 se detiene sin reintentos; los resultados previos del lote se conservan. El puntaje usa principalmente cargo y ubicación, así que revisa los requisitos y postúlate en Magneto.
+
+El filtro aplica a búsquedas nuevas; no borra las ofertas Magneto que ya estaban guardadas. No requiere migración de base de datos.
+
+Para habilitar Magneto, después de instalar `backend/requirements.txt`, ejecuta `python -m playwright install chromium` y reinicia el backend. Si no usarás Magneto, no necesitas descargar Chromium.
+
+Aviso importante: esta beta está pensada para uso personal/familiar, pero no es una autorización de Magneto ni una conclusión legal. El reglamento publicado de Magneto restringe copiar o distribuir contenido. El uso privado o no comercial no elimina automáticamente esas condiciones. Si Magneto solicita detenerlo, desmarca Magneto y no vuelvas a consultar la fuente. Para uso sostenido, pide permiso escrito o acceso oficial a su API empresarial.
+
+JOOBLE COLOMBIA
+Si Jooble devuelve 403, revisa que JOOBLE_API_KEY en backend/.env sea una clave válida emitida para Colombia (portal co.jooble.org/api/about), sin espacios ni clave de otro dominio, y reinicia el backend. La documentación oficial define 403 como clave ausente o inválida. Si persiste, consulta a soporte de Jooble y confirma el endpoint regional. No compartas la clave.
+
+La API gratuita de Jooble publica un límite total de 500 solicitudes de por vida por clave. Cada búsqueda agrupa cargos en una solicitud.
+
+Si reemplazas una instalación existente, conserva backend/.env, frontend/.env y la base de datos. El ZIP no incluye esos archivos, dependencias instaladas, secretos ni compilados. Revisa README.md para instalar/arrancar backend y frontend.
+
+ALERTAS DE LINKEDIN POR GMAIL
+La integración lee alertas de LinkedIn mediante Gmail API OAuth 2.0; no automatiza LinkedIn ni el muro. Configura Google Cloud y las variables GOOGLE_OAUTH_CLIENT_ID, GOOGLE_OAUTH_CLIENT_SECRET y GOOGLE_OAUTH_REDIRECT_URI en backend/.env. La URI de callback local es http://localhost:8000/gmail/oauth/callback. Aplica la migración con `alembic upgrade head`, reinicia el backend, conecta una cuenta Gmail dedicada y selecciona la etiqueta que contiene las alertas. La app filtra por la etiqueta y remitente LinkedIn, pero el scope OAuth `gmail.readonly` técnicamente permite leer todo el buzón. En modo de prueba de Google, el refresh token puede caducar a los 7 días. Consulta el README.md antes de configurar.
+
+FILTRO POR DÍA EN QUE SE ENCONTRÓ
+La página Ofertas permite filtrar por lunes, martes y los demás días de la semana actual. La fecha “Encontrada el” es el día en que la oferta entró por primera vez a la bandeja esa semana, no necesariamente la fecha en que se publicó originalmente. Dentro de cada día, las ofertas se ordenan de mayor a menor coincidencia con el perfil. Si una vacante ya guardada vuelve a aparecer en una búsqueda posterior de la misma semana, conserva su primer día y no se repite. Se deduplica por enlace y por huella normalizada de título, empresa y ubicación.
+
+Si una fuente proporciona su fecha original de publicación, también se muestra aparte; si no la proporciona, el filtro diario sigue funcionando con la fecha de hallazgo. El campo opcional `jobs.published_at` se agrega con `alembic upgrade head` y no elimina ofertas existentes.
+
+
+NOMBRE Y FOTO DE PERFIL EN EL MENÚ
+El menú muestra el campo Nombre completo de Mi perfil (el correo queda debajo) y permite guardar una foto desde Mi perfil. La imagen se valida y normaliza a WebP (máximo 512 × 512) y se guarda en PostgreSQL para que persista con los datos del usuario. Desde backend, actualiza dependencias con `pip install -r requirements.txt`, aplica la migración con `alembic upgrade head` y reinicia la API. Se aceptan JPG, PNG o WebP de hasta 2 MB. No se requiere cambiar `.env`.

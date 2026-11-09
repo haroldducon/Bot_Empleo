@@ -1,0 +1,4 @@
+{
+  "python.analysis.extraPaths": ["./backend"],
+  "pylint.args": ["--init-hook=import sys; sys.path.append('backend')"]
+}

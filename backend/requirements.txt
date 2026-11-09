@@ -1,0 +1,15 @@
+﻿fastapi
+uvicorn[standard]
+sqlalchemy
+psycopg[binary]
+alembic
+pydantic-settings
+pyjwt
+pwdlib[argon2]
+email-validator
+python-multipart
+httpx
+beautifulsoup4
+cryptography
+playwright==1.63.0
+Pillow>=10.0.0
