@@ -2,18 +2,26 @@ import { useState } from "react";
 import { api, setToken } from "../api";
 import { Logo, inputCls, primaryBtn } from "./ui";
 import { CURRENT_YEAR } from "../constants";
-import nexoBot from "../assets/nexo-bot.webp";
+import loginPerson from "../assets/login-person.webp";
+import loginRobot from "../assets/login-robot-laptop.webp";
 import "./Login.css";
-
-const INSIGHTS = [
-  { icon: "↗", title: "Coincidencia inteligente", detail: "Ofertas alineadas con tu experiencia" },
-  { icon: "◷", title: "Ahorra tiempo", detail: "Tu búsqueda, organizada en un solo lugar" },
-  { icon: "✦", title: "Análisis con IA", detail: "Entiende tus fortalezas y oportunidades" },
-];
 
 function getResetToken() {
   if (typeof window === "undefined" || !window.location.hash.startsWith("#reset-password")) return "";
   return new URLSearchParams(window.location.hash.split("?")[1] || "").get("token") || "";
+}
+
+function SideArtwork({ side, image, alt, label, detail }) {
+  return (
+    <aside className={`auth-side auth-side-${side}`} aria-label={label}>
+      <div className="auth-side-glow" aria-hidden="true" />
+      <img className="auth-side-art" src={image} alt={alt} />
+      <div className="auth-side-caption">
+        <span className="auth-side-dot" aria-hidden="true" />
+        <span><b>{label}</b><small>{detail}</small></span>
+      </div>
+    </aside>
+  );
 }
 
 export default function Login({ onLogin, onRegister }) {
@@ -81,42 +89,33 @@ export default function Login({ onLogin, onRegister }) {
   const isForgot = mode === "forgot";
   const isReset = mode === "reset";
   const isRegister = mode === "register";
+  const heading = isLogin
+    ? "Qué bueno tenerte de vuelta"
+    : isRegister
+      ? "Crea tu cuenta"
+      : isForgot
+        ? "Recupera tu acceso"
+        : "Elige una contraseña nueva";
 
   return (
     <div className="auth-shell">
-      <aside className="auth-showcase">
-        <div className="auth-brand"><Logo light /></div>
-        <div className="auth-showcase-copy">
-          <span className="auth-eyebrow"><span className="auth-live-dot" /> BÚSQUEDA DE EMPLEO CON IA</span>
-          <h1>Tu próximo paso profesional, <em>con claridad.</em></h1>
-          <p className="auth-lead">
-            Encuentra oportunidades que hacen sentido para ti. Compara cada oferta con tu experiencia y enfoca tu energía en las mejores.
-          </p>
-          <div className="auth-visual" aria-hidden="true">
-            <img className="auth-bot-image" src={nexoBot} alt="" />
-            <div className="auth-visual-shade" />
-            <div className="auth-visual-caption"><span className="auth-caption-mark">✦</span><span><b>Inteligencia para tu búsqueda</b><small>Datos, oportunidades y decisiones en contexto</small></span></div>
-          </div>
-          <div className="auth-benefits">
-            {INSIGHTS.map((item) => (
-              <div className="auth-benefit" key={item.title}>
-                <span className="auth-benefit-icon" aria-hidden="true">{item.icon}</span>
-                <span><b>{item.title}</b><small>{item.detail}</small></span>
-              </div>
-            ))}
-          </div>
-        </div>
-        <div className="auth-footnote"><span className="auth-shield">✓</span> Tus datos personales están protegidos.</div>
-      </aside>
+      <div className="auth-mobile-brand"><Logo /></div>
+      <SideArtwork
+        side="person"
+        image={loginPerson}
+        alt="Profesional trabajando en su laptop"
+        label="Tu talento, en movimiento"
+        detail="Un espacio pensado para tu próximo paso"
+      />
 
       <main className="auth-main">
-        <div className="auth-mobile-brand"><Logo /></div>
+        <div className="auth-center-brand"><Logo /></div>
         <section className="auth-form-wrap">
           <div className="auth-form-heading">
             <span className="auth-form-kicker">
-              {isForgot || isReset ? "RECUPERACIÓN DE CUENTA" : "BIENVENIDO A BORDO"}
+              {isForgot || isReset ? "RECUPERACIÓN DE CUENTA" : "NEXO LABORAL · BÚSQUEDA CON IA"}
             </span>
-            <h2>{isLogin ? "Qué bueno tenerte de vuelta" : isRegister ? "Crea tu cuenta" : isForgot ? "Recupera tu acceso" : "Elige una contraseña nueva"}</h2>
+            <h1>{heading}</h1>
             <p>{isLogin ? "Inicia sesión para continuar con tu búsqueda." : isRegister ? "Configura tu espacio profesional en un minuto." : isForgot ? "Te enviaremos un enlace si encontramos una cuenta con ese correo." : "Crea una contraseña de al menos 8 caracteres."}</p>
           </div>
 
@@ -161,6 +160,19 @@ export default function Login({ onLogin, onRegister }) {
         </section>
         <div className="auth-copyright">© {CURRENT_YEAR} NEXO LABORAL <span>·</span> DESARROLLADO POR <strong>HAROLD DUCON</strong></div>
       </main>
+
+      <SideArtwork
+        side="robot"
+        image={loginRobot}
+        alt="Asistente robot trabajando con una laptop"
+        label="Tecnología a tu lado"
+        detail="Encuentra oportunidades con más claridad"
+      />
+
+      <div className="auth-mobile-art" aria-hidden="true">
+        <img src={loginPerson} alt="" />
+        <img src={loginRobot} alt="" />
+      </div>
     </div>
   );
 }
