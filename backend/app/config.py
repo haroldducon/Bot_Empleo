@@ -15,6 +15,8 @@ class Settings(BaseSettings):
     google_oauth_client_secret: str = ""
     google_oauth_redirect_uri: str = ""
     frontend_url: str = ""
+    resend_api_key: str = ""
+    resend_from_email: str = ""
     smtp_host: str = ""
     smtp_port: int = 587
     smtp_username: str = ""
@@ -62,8 +64,11 @@ class Settings(BaseSettings):
 
     @property
     def reset_email_enabled(self) -> bool:
-        return all((self.smtp_host, self.smtp_username, self.smtp_password,
-                    self.smtp_from_email, self.frontend_url))
+        resend_sender = self.resend_from_email or self.smtp_from_email
+        resend_ready = bool(self.resend_api_key and resend_sender and self.frontend_url)
+        smtp_ready = all((self.smtp_host, self.smtp_username, self.smtp_password,
+                          self.smtp_from_email, self.frontend_url))
+        return resend_ready or smtp_ready
 
 
 settings = Settings()

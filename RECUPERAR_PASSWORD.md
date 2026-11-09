@@ -1,76 +1,54 @@
-# Implementación: recuperación de contraseña
+# Recuperación de contraseña: configuración y despliegue
 
-Se agregó al proyecto un flujo de recuperación desde el login. La solicitud devuelve siempre el mismo mensaje, tanto si el correo existe como si no. El backend envía un token aleatorio de un solo uso; en PostgreSQL se almacena solo su hash SHA-256. El enlace vence por defecto en 30 minutos y al cambiar la contraseña se invalidan los tokens pendientes de esa cuenta.
+El proyecto incluye recuperación desde el login. El flujo usa un token aleatorio de un solo uso; en PostgreSQL guarda únicamente el hash, y el enlace vence por defecto en 30 minutos. La respuesta de solicitud es genérica para no revelar si un correo está registrado.
 
-## Archivos modificados o añadidos
+## Importante para Render Free
 
-- `backend/app/config.py`: ajustes SMTP y vigencia.
-- `backend/app/models.py`: tabla de tokens de recuperación.
-- `backend/app/schemas.py`: validación de solicitud y contraseña nueva.
-- `backend/app/routers/auth.py`: endpoints de solicitud y cambio de contraseña.
-- `backend/app/password_reset_mail.py`: envío SMTP.
-- `backend/alembic/versions/b7d2c9f41a60_password_reset_tokens.py`: migración de base de datos.
-- `backend/.env.example`: plantilla con las variables nuevas.
-- `frontend/src/api.js`, `frontend/src/components/Login.jsx` y `Login.css`: interfaz y llamadas al backend.
-- `.gitignore`: excluye respaldos `.dump` y `.backup`.
+Render Free bloquea conexiones salientes por SMTP en los puertos 25, 465 y 587. Por eso la implementación actual prioriza la **API HTTPS de Resend** por el puerto 443. Si existe `RESEND_API_KEY`, no intenta SMTP. SMTP se conserva como alternativa para servicios de hosting que sí permitan esos puertos.
 
-## Aplicar los cambios
+## Variables de Render para Resend
 
-1. Reemplaza/actualiza los archivos del proyecto con las versiones de este paquete. Conserva tus archivos locales `backend/.env` y `frontend/.env`; no los sobrescribas con plantillas ni los subas a GitHub.
-2. Desde Git Bash, entra al proyecto y revisa que el respaldo local no vaya a GitHub:
+En Render, abre el servicio del backend y entra a **Environment**. Añade o corrige:
+
+```text
+RESEND_API_KEY=tu_api_key_de_resend
+RESEND_FROM_EMAIL=Nexo Laboral <no-reply@haducon.shop>
+FRONTEND_URL=https://bot-empleo.vercel.app
+PASSWORD_RESET_MINUTES=30
+```
+
+`RESEND_API_KEY` es una clave API de Resend. No la pongas en Vercel, GitHub, el código o el chat. `RESEND_FROM_EMAIL` debe usar un dominio que Resend muestre como **Verified**. Si configuraste un remitente `@gmail.com`, Resend lo rechazará. Puedes dejar las variables `SMTP_*` antiguas; la API HTTPS de Resend se usa cuando hay `RESEND_API_KEY`.
+
+La función requiere un dominio verificado para mandar a usuarios. El dominio de prueba `resend.dev` solo sirve para enviar a la dirección asociada a la cuenta Resend. La verificación se hace en Resend → **Domains**, añadiendo en el DNS del dominio los registros indicados por Resend.
+
+## Publicar los cambios
+
+1. Copia los archivos actualizados sobre el proyecto local, conservando `backend/.env`, `frontend/.env` y `.git`. No sustituyas tus archivos de secretos por plantillas.
+2. Desde Git Bash:
 
 ```bash
 cd /f/Bot_Empleos
 git status --short
 ```
 
-Si `backend/bot_empleos_completo.dump` o cualquier `.dump` aparece en estado de seguimiento, no lo subas. El `.gitignore` actualizado ignora archivos `.dump` nuevos; si ya estaba trackeado, quítalo del índice con `git rm --cached backend/bot_empleos_completo.dump` (no borra el archivo local).
-
-3. Envía los cambios al repositorio:
+Confirma que no aparezcan `.env` ni `backend/bot_empleos_completo.dump`. Luego:
 
 ```bash
 git add .
 git status --short
-git commit -m "Agregar recuperación de contraseña"
+git commit -m "Enviar recuperación mediante Resend HTTPS"
 git push
 ```
 
-Antes del commit verifica que `.env`, respaldos y secretos no aparezcan staged.
-
-## Variables para Render
-
-En el servicio del backend, abre **Environment** y añade estas variables con los datos de un proveedor de correo que ofrezca SMTP:
-
-```text
-FRONTEND_URL=https://bot-empleo.vercel.app
-SMTP_HOST=servidor-smtp-del-proveedor
-SMTP_PORT=587
-SMTP_USERNAME=usuario-smtp
-SMTP_PASSWORD=secreto-smtp
-SMTP_FROM_EMAIL=correo-remitente-verificado
-SMTP_USE_SSL=false
-PASSWORD_RESET_MINUTES=30
-```
-
-Los valores `SMTP_HOST`, usuario, contraseña y remitente dependen del proveedor que elijas. Verifica el dominio/remitente con ese proveedor. El código usa STARTTLS para el puerto 587; para conexión SSL implícita usa puerto 465 y `SMTP_USE_SSL=true`. No pongas credenciales SMTP en Vercel, variables `VITE_*`, GitHub ni en el navegador.
-
-`FRONTEND_URL` debe ser el dominio de Vercel solamente, sin ruta y sin barra final. Actualiza `CORS_ORIGINS` solo si cambia el origen web.
-
-## Migrar y desplegar
-
-Haz push a GitHub y espera a que Render y Vercel terminen sus despliegues. Para añadir la tabla a Neon, ejecuta una sola vez la migración desde Render en el directorio raíz configurado (`backend`):
+3. Espera el despliegue de Render. En **Logs**, confirma que la aplicación inicia correctamente.
+4. La migración `b7d2c9f41a60` crea `password_reset_tokens`; si ya la aplicaste a Neon y `alembic current` mostró esa revisión, no hace falta repetirla. Si no, ejecuta desde el backend local con `DATABASE_URL` apuntando a Neon:
 
 ```bash
-alembic upgrade head
+python -m alembic upgrade head
 ```
-
-Lo preferible es poner ese comando como **Pre-Deploy Command** para futuras migraciones. También puede ejecutarse en Render Shell, siempre después de que la nueva versión esté desplegada y con `DATABASE_URL` apuntando a Neon.
 
 ## Probar
 
-1. Abre el login publicado y pulsa **¿Olvidaste tu contraseña?**.
-2. Escribe un correo de cuenta y envía la solicitud. La pantalla debe mostrar el mensaje genérico de confirmación.
-3. Abre el correo y el enlace desde el mismo dominio de Vercel. Define una contraseña nueva de al menos 8 caracteres y confírmala.
-4. Inicia sesión con la contraseña nueva. El enlace solo funciona una vez y vence según `PASSWORD_RESET_MINUTES`.
+Desde el login, pulsa **¿Olvidaste tu contraseña?** y solicita un enlace para una cuenta registrada. Revisa **Resend → Emails** y el spam. Si hay un error, revisa los logs de Render; la API no muestra detalles al visitante para no exponer la cuenta.
 
-Si no llega el correo, revisa que Render tenga todas las variables, que el remitente esté autorizado por el proveedor y los logs del servicio. No compartas contraseñas SMTP, links de restablecimiento, tokens ni cadenas de Neon.
+Un nuevo enlace invalida los anteriores para esa cuenta. La aplicación aplica además un intervalo mínimo de 60 segundos entre envíos al mismo usuario.

@@ -100,4 +100,4 @@ La foto se almacena como `BYTEA` en la fila del perfil de PostgreSQL, no en una 
 
 ## Recuperación de contraseña
 
-El login incluye recuperación por correo con enlace de un solo uso y vencimiento. Para configurar SMTP, aplicar la migración de tokens y desplegar los cambios, sigue [RECUPERAR_PASSWORD.md](RECUPERAR_PASSWORD.md).
+El login incluye recuperación por correo con enlace de un solo uso y vencimiento. Para Render Free, configura Resend por HTTPS, aplica la migración de tokens y despliega los cambios siguiendo [RECUPERAR_PASSWORD.md](RECUPERAR_PASSWORD.md).
