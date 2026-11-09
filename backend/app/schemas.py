@@ -96,3 +96,14 @@ class AIKeyOut(BaseModel):
     provider: str
     hint: str  # solo los últimos 4 caracteres
     is_active: bool
+
+
+class PasswordResetRequest(BaseModel):
+    model_config = ConfigDict(str_strip_whitespace=True, extra="forbid")
+    email: EmailStr
+
+
+class PasswordResetComplete(BaseModel):
+    model_config = ConfigDict(str_strip_whitespace=True, extra="forbid")
+    token: str = Field(min_length=32, max_length=200)
+    new_password: str = Field(min_length=8, max_length=128)

@@ -97,3 +97,7 @@ Desde `backend`: `python -m unittest discover -s tests -v`. Desde `frontend`: `n
 El nombre mostrado en el menú se toma de **Mi perfil → Nombre completo**; el correo queda como dato secundario. Puedes subir, reemplazar o quitar una foto desde la parte superior de **Mi perfil**. Se aceptan JPG, PNG y WebP de hasta 2 MB; el backend valida el contenido real, limita las dimensiones y convierte la imagen a WebP de hasta 512 × 512 antes de guardarla.
 
 La foto se almacena como `BYTEA` en la fila del perfil de PostgreSQL, no en una carpeta del servidor ni en un servicio externo. Así queda incluida en las copias de seguridad de la base de datos. Esta actualización agrega la columna nullable `profiles.avatar_data`; después de copiar los archivos, actualiza la dependencia con `pip install -r requirements.txt`, ejecuta `alembic upgrade head` desde `backend` y reinicia la API. La migración no modifica los perfiles existentes ni requiere cambios en `.env`.
+
+## Recuperación de contraseña
+
+El login incluye recuperación por correo con enlace de un solo uso y vencimiento. Para configurar SMTP, aplicar la migración de tokens y desplegar los cambios, sigue [RECUPERAR_PASSWORD.md](RECUPERAR_PASSWORD.md).

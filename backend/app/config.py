@@ -8,12 +8,20 @@ class Settings(BaseSettings):
     secret_key: str
     encryption_key: str
     cors_origins: str = "http://localhost:5173"
-    access_token_minutes: int = 60 * 24  # 24 horas
+    access_token_minutes: int = 60 * 24
     gemini_model: str = "gemini-flash-latest"
     jooble_api_key: str = ""
     google_oauth_client_id: str = ""
     google_oauth_client_secret: str = ""
     google_oauth_redirect_uri: str = ""
+    frontend_url: str = ""
+    smtp_host: str = ""
+    smtp_port: int = 587
+    smtp_username: str = ""
+    smtp_password: str = ""
+    smtp_from_email: str = ""
+    smtp_use_ssl: bool = False
+    password_reset_minutes: int = 30
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
@@ -41,9 +49,21 @@ class Settings(BaseSettings):
             raise ValueError("ACCESS_TOKEN_MINUTES debe estar entre 5 y 1440")
         return value
 
+    @field_validator("password_reset_minutes")
+    @classmethod
+    def validate_password_reset_minutes(cls, value: int) -> int:
+        if not 5 <= value <= 60:
+            raise ValueError("PASSWORD_RESET_MINUTES debe estar entre 5 y 60")
+        return value
+
     @property
     def allowed_origins(self) -> list[str]:
         return [origin.strip() for origin in self.cors_origins.split(",") if origin.strip()]
+
+    @property
+    def reset_email_enabled(self) -> bool:
+        return all((self.smtp_host, self.smtp_username, self.smtp_password,
+                    self.smtp_from_email, self.frontend_url))
 
 
 settings = Settings()

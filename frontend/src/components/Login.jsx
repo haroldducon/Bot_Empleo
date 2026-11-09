@@ -11,18 +11,61 @@ const INSIGHTS = [
   { icon: "✦", title: "Análisis con IA", detail: "Entiende tus fortalezas y oportunidades" },
 ];
 
+function getResetToken() {
+  if (typeof window === "undefined" || !window.location.hash.startsWith("#reset-password")) return "";
+  return new URLSearchParams(window.location.hash.split("?")[1] || "").get("token") || "";
+}
+
 export default function Login({ onLogin, onRegister }) {
-  const [mode, setMode] = useState("login");
+  const [resetToken, setResetToken] = useState(getResetToken);
+  const [mode, setMode] = useState(() => (getResetToken() ? "reset" : "login"));
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
+
+  function changeMode(nextMode) {
+    setError("");
+    setSuccess("");
+    setPassword("");
+    setConfirmPassword("");
+    if (nextMode !== "reset") {
+      setResetToken("");
+      if (window.location.hash.startsWith("#reset-password")) {
+        window.history.replaceState(null, "", `${window.location.pathname}${window.location.search}`);
+      }
+    }
+    setMode(nextMode);
+  }
 
   async function submit(e) {
     e.preventDefault();
     setError("");
+    setSuccess("");
     setLoading(true);
     try {
+      if (mode === "forgot") {
+        const result = await api.requestPasswordReset(email);
+        setSuccess(result.message);
+        return;
+      }
+      if (mode === "reset") {
+        if (!resetToken) throw new Error("El enlace está incompleto. Solicita uno nuevo.");
+        if (password !== confirmPassword) throw new Error("Las contraseñas no coinciden.");
+        const result = await api.resetPassword(resetToken, password);
+        setSuccess(result.message);
+        setPassword("");
+        setConfirmPassword("");
+        setResetToken("");
+        window.history.replaceState(null, "", `${window.location.pathname}${window.location.search}`);
+        setMode("login");
+        return;
+      }
+      if (mode === "register" && password !== confirmPassword) {
+        throw new Error("Las contraseñas no coinciden.");
+      }
       if (mode === "register") await api.register(email, password);
       const { access_token } = await api.login(email, password);
       setToken(access_token);
@@ -35,6 +78,9 @@ export default function Login({ onLogin, onRegister }) {
   }
 
   const isLogin = mode === "login";
+  const isForgot = mode === "forgot";
+  const isReset = mode === "reset";
+  const isRegister = mode === "register";
 
   return (
     <div className="auth-shell">
@@ -67,33 +113,46 @@ export default function Login({ onLogin, onRegister }) {
         <div className="auth-mobile-brand"><Logo /></div>
         <section className="auth-form-wrap">
           <div className="auth-form-heading">
-            <span className="auth-form-kicker">BIENVENIDO A BORDO</span>
-            <h2>{isLogin ? "Qué bueno tenerte de vuelta" : "Crea tu cuenta"}</h2>
-            <p>{isLogin ? "Inicia sesión para continuar con tu búsqueda." : "Configura tu espacio profesional en un minuto."}</p>
+            <span className="auth-form-kicker">
+              {isForgot || isReset ? "RECUPERACIÓN DE CUENTA" : "BIENVENIDO A BORDO"}
+            </span>
+            <h2>{isLogin ? "Qué bueno tenerte de vuelta" : isRegister ? "Crea tu cuenta" : isForgot ? "Recupera tu acceso" : "Elige una contraseña nueva"}</h2>
+            <p>{isLogin ? "Inicia sesión para continuar con tu búsqueda." : isRegister ? "Configura tu espacio profesional en un minuto." : isForgot ? "Te enviaremos un enlace si encontramos una cuenta con ese correo." : "Crea una contraseña de al menos 8 caracteres."}</p>
           </div>
 
           <form onSubmit={submit} className="auth-form">
-            <label className="auth-field">
-              <span>Correo electrónico</span>
-              <input type="email" required autoComplete="email" placeholder="nombre@correo.com" value={email} onChange={(e) => setEmail(e.target.value)} className={inputCls} />
-            </label>
-            <label className="auth-field">
-              <span>Contraseña</span>
-              <input type="password" required minLength={8} autoComplete={isLogin ? "current-password" : "new-password"} placeholder={isLogin ? "Escribe tu contraseña" : "Mínimo 8 caracteres"} value={password} onChange={(e) => setPassword(e.target.value)} className={inputCls} />
-            </label>
+            {(isLogin || isRegister || isForgot) && (
+              <label className="auth-field">
+                <span>Correo electrónico</span>
+                <input type="email" required autoComplete="email" placeholder="nombre@correo.com" value={email} onChange={(e) => setEmail(e.target.value)} className={inputCls} />
+              </label>
+            )}
+            {(isLogin || isRegister || isReset) && (
+              <label className="auth-field">
+                <span>{isReset ? "Nueva contraseña" : "Contraseña"}</span>
+                <input type="password" required minLength={8} maxLength={128} autoComplete={isLogin ? "current-password" : "new-password"} placeholder={isLogin ? "Escribe tu contraseña" : "Mínimo 8 caracteres"} value={password} onChange={(e) => setPassword(e.target.value)} className={inputCls} />
+              </label>
+            )}
+            {(isReset || isRegister) && (
+              <label className="auth-field">
+                <span>Confirma tu contraseña</span>
+                <input type="password" required minLength={8} maxLength={128} autoComplete="new-password" placeholder="Escríbela otra vez" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} className={inputCls} />
+              </label>
+            )}
             {error && <p role="alert" className="auth-error">{error}</p>}
+            {success && <p role="status" className="auth-success">{success}</p>}
             <button disabled={loading} className={`${primaryBtn} auth-submit`}>
-              {loading ? "Un momento…" : isLogin ? "Iniciar sesión" : "Crear mi cuenta"}
+              {loading ? "Un momento…" : isLogin ? "Iniciar sesión" : isRegister ? "Crear mi cuenta" : isForgot ? "Enviar enlace" : "Guardar contraseña nueva"}
               {!loading && <span aria-hidden="true">→</span>}
             </button>
           </form>
 
+          {isLogin && <p className="auth-forgot"><button type="button" onClick={() => changeMode("forgot")}>¿Olvidaste tu contraseña?</button></p>}
           <p className="auth-switch">
-            {isLogin ? "¿Todavía no tienes cuenta?" : "¿Ya tienes una cuenta?"}{" "}
+            {isLogin ? "¿Todavía no tienes cuenta?" : isRegister ? "¿Ya tienes una cuenta?" : "¿Recordaste tu contraseña?"}{" "}
             <button type="button" onClick={() => {
-              setError("");
               if (isLogin && onRegister) onRegister();
-              else setMode(isLogin ? "register" : "login");
+              else changeMode(isLogin ? "register" : "login");
             }}>
               {isLogin ? "Regístrate gratis" : "Inicia sesión"}
             </button>

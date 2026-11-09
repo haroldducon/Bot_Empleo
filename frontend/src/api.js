@@ -48,6 +48,13 @@ export const api = {
       method: "POST",
       form: { username: email, password },
     }),
+  requestPasswordReset: (email) =>
+    request("/auth/forgot-password", { method: "POST", body: { email } }),
+  resetPassword: (token, new_password) =>
+    request("/auth/reset-password", {
+      method: "POST",
+      body: { token, new_password },
+    }),
   me: () => request("/auth/me"),
   getProfile: () => request("/profile"),
   saveProfile: (data) => request("/profile", { method: "PUT", body: data }),
