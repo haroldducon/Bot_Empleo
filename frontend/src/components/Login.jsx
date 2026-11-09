@@ -2,26 +2,13 @@ import { useState } from "react";
 import { api, setToken } from "../api";
 import { Logo, inputCls, primaryBtn } from "./ui";
 import { CURRENT_YEAR } from "../constants";
-import loginPerson from "../assets/login-person.webp";
-import loginRobot from "../assets/login-robot-laptop.webp";
+import AuthShowcase from "./AuthShowcase";
+import AuthMascot from "./AuthMascot";
 import "./Login.css";
 
 function getResetToken() {
   if (typeof window === "undefined" || !window.location.hash.startsWith("#reset-password")) return "";
   return new URLSearchParams(window.location.hash.split("?")[1] || "").get("token") || "";
-}
-
-function SideArtwork({ side, image, alt, label, detail }) {
-  return (
-    <aside className={`auth-side auth-side-${side}`} aria-label={label}>
-      <div className="auth-side-glow" aria-hidden="true" />
-      <img className="auth-side-art" src={image} alt={alt} />
-      <div className="auth-side-caption">
-        <span className="auth-side-dot" aria-hidden="true" />
-        <span><b>{label}</b><small>{detail}</small></span>
-      </div>
-    </aside>
-  );
 }
 
 export default function Login({ onLogin, onRegister }) {
@@ -89,36 +76,20 @@ export default function Login({ onLogin, onRegister }) {
   const isForgot = mode === "forgot";
   const isReset = mode === "reset";
   const isRegister = mode === "register";
-  const heading = isLogin
-    ? "Qué bueno tenerte de vuelta"
-    : isRegister
-      ? "Crea tu cuenta"
-      : isForgot
-        ? "Recupera tu acceso"
-        : "Elige una contraseña nueva";
+  const heading = isLogin ? "Qué bueno tenerte de vuelta" : isRegister ? "Crea tu cuenta" : isForgot ? "Recupera tu acceso" : "Elige una contraseña nueva";
 
   return (
     <div className="auth-shell">
-      <div className="auth-mobile-brand"><Logo /></div>
-      <SideArtwork
-        side="person"
-        image={loginPerson}
-        alt="Profesional trabajando en su laptop"
-        label="Tu talento, en movimiento"
-        detail="Un espacio pensado para tu próximo paso"
-      />
-
+      <AuthShowcase />
       <main className="auth-main">
-        <div className="auth-center-brand"><Logo /></div>
+        <div className="auth-form-brand"><Logo /></div>
         <section className="auth-form-wrap">
+          <AuthMascot />
           <div className="auth-form-heading">
-            <span className="auth-form-kicker">
-              {isForgot || isReset ? "RECUPERACIÓN DE CUENTA" : "NEXO LABORAL · BÚSQUEDA CON IA"}
-            </span>
+            <span className="auth-form-kicker">{isForgot || isReset ? "RECUPERACIÓN DE CUENTA" : "NEXO LABORAL · BÚSQUEDA CON IA"}</span>
             <h1>{heading}</h1>
             <p>{isLogin ? "Inicia sesión para continuar con tu búsqueda." : isRegister ? "Configura tu espacio profesional en un minuto." : isForgot ? "Te enviaremos un enlace si encontramos una cuenta con ese correo." : "Crea una contraseña de al menos 8 caracteres."}</p>
           </div>
-
           <form onSubmit={submit} className="auth-form">
             {(isLogin || isRegister || isForgot) && (
               <label className="auth-field">
@@ -145,34 +116,18 @@ export default function Login({ onLogin, onRegister }) {
               {!loading && <span aria-hidden="true">→</span>}
             </button>
           </form>
-
           {isLogin && <p className="auth-forgot"><button type="button" onClick={() => changeMode("forgot")}>¿Olvidaste tu contraseña?</button></p>}
           <p className="auth-switch">
             {isLogin ? "¿Todavía no tienes cuenta?" : isRegister ? "¿Ya tienes una cuenta?" : "¿Recordaste tu contraseña?"}{" "}
             <button type="button" onClick={() => {
               if (isLogin && onRegister) onRegister();
               else changeMode(isLogin ? "register" : "login");
-            }}>
-              {isLogin ? "Regístrate gratis" : "Inicia sesión"}
-            </button>
+            }}>{isLogin ? "Regístrate gratis" : "Inicia sesión"}</button>
           </p>
           <div className="auth-form-trust"><span>●</span> Acceso seguro · Sin costo para empezar</div>
         </section>
         <div className="auth-copyright">© {CURRENT_YEAR} NEXO LABORAL <span>·</span> DESARROLLADO POR <strong>HAROLD DUCON</strong></div>
       </main>
-
-      <SideArtwork
-        side="robot"
-        image={loginRobot}
-        alt="Asistente robot trabajando con una laptop"
-        label="Tecnología a tu lado"
-        detail="Encuentra oportunidades con más claridad"
-      />
-
-      <div className="auth-mobile-art" aria-hidden="true">
-        <img src={loginPerson} alt="" />
-        <img src={loginRobot} alt="" />
-      </div>
     </div>
   );
 }

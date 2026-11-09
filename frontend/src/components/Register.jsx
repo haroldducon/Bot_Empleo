@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { api, setToken } from "../api";
-import { Logo, inputCls, primaryBtn } from "./ui";
+import { inputCls, primaryBtn } from "./ui";
 import { CURRENT_YEAR } from "../constants";
-import loginAnalytics from "../assets/login-analytics.jpg";
+import AuthShowcase from "./AuthShowcase";
+import AuthMascot from "./AuthMascot";
 import "./Login.css";
 
 export default function Register({ onLogin, onBack }) {
@@ -34,32 +35,13 @@ export default function Register({ onLogin, onBack }) {
 
   return (
     <div className="auth-shell">
-      <aside className="auth-showcase">
-        <div className="auth-brand"><Logo light /></div>
-        <div className="auth-showcase-copy">
-          <span className="auth-eyebrow"><span className="auth-live-dot" /> TU ESPACIO PROFESIONAL</span>
-          <h1>Una búsqueda más inteligente <em>empieza aquí.</em></h1>
-          <p className="auth-lead">Crea tu cuenta y deja que los datos te ayuden a encontrar oportunidades que sí encajan contigo.</p>
-          <div className="auth-visual" aria-hidden="true">
-            <img src={loginAnalytics} alt="" />
-            <div className="auth-visual-shade" />
-            <div className="auth-visual-caption"><span className="auth-caption-mark">✦</span><span><b>Tu carrera, con mejores insights</b><small>Un perfil. Oportunidades más relevantes.</small></span></div>
-          </div>
-          <div className="auth-benefits">
-            <div className="auth-benefit"><span className="auth-benefit-icon">✓</span><span><b>Perfil personalizado</b><small>Cuéntanos qué buscas</small></span></div>
-            <div className="auth-benefit"><span className="auth-benefit-icon">↗</span><span><b>Mejores coincidencias</b><small>Prioriza lo más relevante</small></span></div>
-            <div className="auth-benefit"><span className="auth-benefit-icon">✦</span><span><b>Análisis con IA</b><small>Decide con más contexto</small></span></div>
-          </div>
-        </div>
-        <div className="auth-footnote"><span className="auth-shield">✓</span> Tus datos personales están protegidos.</div>
-      </aside>
-
+      <AuthShowcase isRegister />
       <main className="auth-main">
-        <div className="auth-mobile-brand"><Logo /></div>
         <section className="auth-form-wrap">
+          <AuthMascot />
           <div className="auth-form-heading">
             <span className="auth-form-kicker">EMPIEZA GRATIS</span>
-            <h2>Crea tu cuenta</h2>
+            <h1>Crea tu cuenta</h1>
             <p>Solo necesitas tu correo y una contraseña para comenzar.</p>
           </div>
           <form onSubmit={submit} className="auth-form">
