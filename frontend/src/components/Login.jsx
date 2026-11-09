@@ -2,7 +2,7 @@ import { useState } from "react";
 import { api, setToken } from "../api";
 import { Logo, inputCls, primaryBtn } from "./ui";
 import { CURRENT_YEAR } from "../constants";
-import loginAnalytics from "../assets/login-analytics.jpg";
+import nexoBot from "../assets/nexo-bot.webp";
 import "./Login.css";
 
 const INSIGHTS = [
@@ -93,7 +93,7 @@ export default function Login({ onLogin, onRegister }) {
             Encuentra oportunidades que hacen sentido para ti. Compara cada oferta con tu experiencia y enfoca tu energía en las mejores.
           </p>
           <div className="auth-visual" aria-hidden="true">
-            <img src={loginAnalytics} alt="" />
+            <img className="auth-bot-image" src={nexoBot} alt="" />
             <div className="auth-visual-shade" />
             <div className="auth-visual-caption"><span className="auth-caption-mark">✦</span><span><b>Inteligencia para tu búsqueda</b><small>Datos, oportunidades y decisiones en contexto</small></span></div>
           </div>
