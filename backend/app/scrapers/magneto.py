@@ -214,6 +214,10 @@ def _fallback_parse(page, city: str) -> list[JobData]:
 
 
 def _block_query_page(route) -> None:
+    # The scraper only needs text and offer links; avoid loading heavy visual assets.
+    if route.request.resource_type in {"image", "font", "media"}:
+        route.abort()
+        return
     parts = urlsplit(route.request.url)
     host = (parts.hostname or "").lower()
     if host in MAGNETO_HOSTS and parts.query and route.request.is_navigation_request():
@@ -244,7 +248,7 @@ def _batch_search_locked(queries: list[str], city: str) -> list[JobData]:
             browser = playwright.chromium.launch(**launch_options)
             context = browser.new_context(
                 locale="es-CO",
-                viewport={"width": 1366, "height": 900},
+                viewport={"width": 1024, "height": 768},
             )
             page = context.new_page()
             page.route("**/*", _block_query_page)
