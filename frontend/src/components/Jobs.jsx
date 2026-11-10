@@ -5,6 +5,7 @@ const STATUS = {
   ok: { label: "Cumple", cls: "bg-brand-50 text-brand-700", bar: "bg-brand-600" },
   partial: { label: "Parcial", cls: "bg-amber-50 text-amber-800", bar: "bg-accent" },
   missing: { label: "No cumple", cls: "bg-red-50 text-red-700", bar: "bg-red-400" },
+  unknown: { label: "No informado", cls: "bg-slate-100 text-slate-600", bar: "bg-slate-300" },
 };
 const WHERE = { profile: "En tu perfil", offer: "Depende de la oferta" };
 const MONTHS_ES = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
@@ -25,6 +26,7 @@ const AI_PROVIDERS = [
   { id: "groq", label: "Groq · GPT-OSS 20B (gratis)" },
   { id: "openrouter", label: "OpenRouter · modelo gratis automático" },
 ];
+const AI_DETAIL_SOURCES = new Set(["computrabajo", "elempleo"]);
 
 const WEEKDAYS = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
 const BOGOTA_DATE_FORMATTER = new Intl.DateTimeFormat("en-CA", {
@@ -90,7 +92,10 @@ function Breakdown({ job, onGoProfile }) {
 
   return (
     <div className="mt-4 space-y-5 rounded-lg bg-canvas p-4">
-      <h3 className="font-semibold">Por qué tiene {job.score}% de coincidencia</h3>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h3 className="font-semibold">Coincidencia estimada: {job.score}%</h3>
+        <span className="text-xs text-muted">Evidencia evaluada: {job.evidence_coverage}%</span>
+      </div>
 
       <ul className="space-y-4">
         {job.criteria.map((c) => {
@@ -224,7 +229,8 @@ function AIResult({ ai, id, isOpen }) {
 export default function Jobs({ onGoSearch, onGoProfile }) {
   const [jobs, setJobs] = useState([]);
   const [weekInfo, setWeekInfo] = useState(null);
-  const [minScore, setMinScore] = useState(0);
+  const [minScore, setMinScore] = useState(30);
+  const [bucket, setBucket] = useState("match");
   const [dayFilter, setDayFilter] = useState("all");
   const [source, setSource] = useState("all");
   const [page, setPage] = useState(1);
@@ -254,14 +260,23 @@ export default function Jobs({ onGoSearch, onGoProfile }) {
     api.weekInfo().then(setWeekInfo).catch(() => {});
   }, []);
 
+  const bucketJobs = useMemo(
+    () => jobs.filter((job) => job.classification === bucket),
+    [jobs, bucket],
+  );
+  const bucketCounts = useMemo(() => ({
+    match: jobs.filter((job) => job.classification === "match").length,
+    review: jobs.filter((job) => job.classification === "review").length,
+  }), [jobs]);
+
   const dayCounts = useMemo(() => {
     const counts = {};
-    for (const job of jobs) {
+    for (const job of bucketJobs) {
       const date = dateKeyInBogota(job.created_at);
       if (date) counts[date] = (counts[date] || 0) + 1;
     }
     return counts;
-  }, [jobs]);
+  }, [bucketJobs]);
 
   const dayOptions = useMemo(() => {
     if (!weekInfo?.start_date) return [];
@@ -280,12 +295,12 @@ export default function Jobs({ onGoSearch, onGoProfile }) {
 
   const dayJobs = useMemo(() => {
     const filtered = dayFilter === "all"
-      ? jobs
-      : jobs.filter((job) => dateKeyInBogota(job.created_at) === dayFilter);
+      ? bucketJobs
+      : bucketJobs.filter((job) => dateKeyInBogota(job.created_at) === dayFilter);
     return [...filtered].sort(
       (a, b) => b.score - a.score || new Date(b.created_at) - new Date(a.created_at),
     );
-  }, [jobs, dayFilter]);
+  }, [bucketJobs, dayFilter]);
 
   // Fuentes que tienen ofertas en el día elegido, con su cantidad
   const sources = useMemo(() => {
@@ -343,7 +358,7 @@ export default function Jobs({ onGoSearch, onGoProfile }) {
         <div className="jobs-toolbar-intro">
           <span className="section-kicker">OPORTUNIDADES PARA TU PERFIL</span>
           <h1 className="jobs-page-title">Tus ofertas <span className="jobs-count">{visible.length}</span></h1>
-          <p className="jobs-toolbar-description">Revisa tus coincidencias y enfoca tu tiempo en las oportunidades con mayor potencial.</p>
+          <p className="jobs-toolbar-description">El porcentaje es una comparación explicable con los datos disponibles, no una decisión de IA. El análisis profundo con IA está disponible cuando la fuente permite leer el detalle.</p>
         </div>
         <div className="jobs-toolbar-controls">
         <label className="jobs-filter-label">
@@ -358,7 +373,7 @@ export default function Jobs({ onGoSearch, onGoProfile }) {
             ))}
           </select>
         </label>
-        <label className="jobs-filter-label">
+        <label className={`jobs-filter-label ${bucket === "review" ? "hidden" : ""}`}>
           <span>Coincidencia</span>
           <select
             value={minScore}
@@ -368,10 +383,9 @@ export default function Jobs({ onGoSearch, onGoProfile }) {
             }}
             className="jobs-filter-select"
           >
-            <option value={0}>Todas</option>
-            <option value={40}>Desde 40%</option>
-            <option value={60}>Desde 60%</option>
-            <option value={80}>Desde 80%</option>
+            <option value={30}>Desde 30%</option>
+            <option value={50}>Desde 50%</option>
+            <option value={70}>Desde 70%</option>
           </select>
         </label>
         <label className="jobs-filter-label">
@@ -384,7 +398,7 @@ export default function Jobs({ onGoSearch, onGoProfile }) {
             }}
             className="jobs-filter-select"
           >
-            <option value="all">Toda la semana ({jobs.length})</option>
+            <option value="all">Toda la semana ({bucketJobs.length})</option>
             {dayOptions.map((day) => (
               <option key={day.value} value={day.value}>{day.label}</option>
             ))}
@@ -392,6 +406,20 @@ export default function Jobs({ onGoSearch, onGoProfile }) {
         </label>
         </div>
       </div>
+
+      <div className="mt-5 flex flex-wrap gap-2" role="tablist" aria-label="Clasificación de ofertas">
+        <button type="button" role="tab" aria-selected={bucket === "match"} className={chipCls(bucket === "match")} onClick={() => { setBucket("match"); setSource("all"); setDayFilter("all"); setPage(1); }}>
+          Coincidencias ({bucketCounts.match})
+        </button>
+        <button type="button" role="tab" aria-selected={bucket === "review"} className={chipCls(bucket === "review")} onClick={() => { setBucket("review"); setSource("all"); setDayFilter("all"); setPage(1); }}>
+          Revisar ({bucketCounts.review})
+        </button>
+      </div>
+      <p className="mt-2 text-sm text-muted">
+        {bucket === "match"
+          ? "Se muestran ofertas desde 30% de coincidencia; puedes subir el filtro. Las que necesitan comprobación están en Revisar."
+          : "Aquí aparecen excepciones por experiencia relacionada y datos incompletos o contradictorios; revisa la explicación y el anuncio original antes de postularte."}
+      </p>
 
       <div className="weekly-reset-banner" role="note">
         <span className="weekly-reset-icon" aria-hidden="true">↻</span>
@@ -447,17 +475,19 @@ export default function Jobs({ onGoSearch, onGoProfile }) {
       {!loading && (jobs.length === 0 || visible.length === 0) ? (
         <div className="mt-4 rounded-xl border border-dashed border-line p-8 text-center text-muted">
           <p>
-            {minScore > 0
-              ? "No hay ofertas que cumplan los filtros seleccionados."
-              : dayFilter !== "all"
+            {dayFilter !== "all"
               ? "No hay ofertas registradas en el día seleccionado."
-              : "Aún no hay ofertas para mostrar."}
+              : bucket === "review"
+              ? "No hay ofertas pendientes de revisión."
+              : minScore > 30
+              ? "No hay coincidencias que cumplan este filtro mínimo."
+              : "Aún no hay coincidencias de 30% o más. Busca ofertas o revisa la pestaña Revisar."}
           </p>
           <button
             onClick={() => {
-              if (dayFilter !== "all" || minScore > 0) {
+              if (dayFilter !== "all" || minScore > 30) {
                 setDayFilter("all");
-                setMinScore(0);
+                setMinScore(30);
                 setPage(1);
               } else {
                 onGoSearch();
@@ -465,7 +495,7 @@ export default function Jobs({ onGoSearch, onGoProfile }) {
             }}
             className="mt-2 font-medium text-brand-600 hover:underline"
           >
-            {dayFilter !== "all" || minScore > 0 ? "Quitar filtros" : "Ir a buscar ofertas"}
+            {dayFilter !== "all" || minScore > 30 ? "Quitar filtros" : "Ir a buscar ofertas"}
           </button>
         </div>
       ) : (
@@ -500,6 +530,12 @@ export default function Jobs({ onGoSearch, onGoProfile }) {
                       <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs text-muted">
                         {j.source_label}
                       </span>
+                      {j.classification === "review" && (
+                        <span className="rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-medium text-amber-800">Requiere revisión</span>
+                      )}
+                      {j.criteria.some((criterion) => criterion.key === "salario" && criterion.detail.startsWith("Salario no informado")) && (
+                        <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs text-slate-700">Salario no informado</span>
+                      )}
                       {j.matched_terms.map((t) => (
                         <span
                           key={t}
@@ -522,13 +558,19 @@ export default function Jobs({ onGoSearch, onGoProfile }) {
                       </div>
                     </div>
                     <div className="jobs-card-actions flex flex-wrap justify-end gap-3 text-sm">
-                      <button
-                        onClick={() => analyze(j.id)}
-                        disabled={aiBusy !== null}
-                        className="font-medium text-brand-600 hover:underline disabled:opacity-50"
-                      >
-                        {busy ? "Analizando..." : j.ai ? "Volver a analizar" : "Analizar con IA"}
-                      </button>
+                      {AI_DETAIL_SOURCES.has(j.source) ? (
+                        <button
+                          onClick={() => analyze(j.id)}
+                          disabled={aiBusy !== null}
+                          className="font-medium text-brand-600 hover:underline disabled:opacity-50"
+                        >
+                          {busy ? "Analizando..." : j.ai ? "Volver a analizar" : "Analizar con IA"}
+                        </button>
+                      ) : (
+                        <span className="text-xs text-muted" title="Abre el anuncio original para leer todos sus requisitos.">
+                          Análisis IA de detalle no disponible para esta fuente
+                        </span>
+                      )}
                       {j.ai && (
                         <button
                           onClick={() => setAiOpen(aiOpen === j.id ? null : j.id)}
@@ -564,6 +606,14 @@ export default function Jobs({ onGoSearch, onGoProfile }) {
                   </div>
                 </div>
 
+                {j.review_reasons?.length > 0 && (
+                  <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-950">
+                    <strong>Por revisar:</strong>
+                    <ul className="mt-1 list-disc space-y-1 pl-5">
+                      {j.review_reasons.map((reason) => <li key={reason}>{reason}</li>)}
+                    </ul>
+                  </div>
+                )}
                 {aiError[j.id] && (
                   <p role="alert" className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
                     {aiError[j.id]}

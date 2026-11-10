@@ -46,6 +46,14 @@ Aplicación web para buscar ofertas, compararlas con tu perfil y analizarlas con
 
    Abre la dirección local que muestra Vite.
 
+## Clasificación y revisión de ofertas
+
+La puntuación automática compara cargo (25 puntos), habilidades (20), experiencia registrada (20), nivel explícito de estudios (15), salario esperado (10), ciudad (5) y modalidad (5). El porcentaje se normaliza usando solo los criterios que la fuente y el perfil permiten evaluar; **Evidencia evaluada** muestra qué proporción de esos criterios tuvo datos utilizables. Este puntaje es una regla explicable, no una decisión de IA. El análisis de IA de una oferta sigue siendo una acción manual y separada.
+
+En **Ofertas**, **Coincidencias** parte de un mínimo de 30% (se puede subir a 50% o 70%). **Revisar** conserva resultados con señales inciertas o contradictorias, y la excepción bajo 30% solo se muestra si la experiencia registrada parece claramente relacionada y el perfil tiene salario mínimo configurado, con el salario publicado compatible, parcialmente compatible o no publicado. Una incompatibilidad salarial explícita no se presenta como coincidencia segura. La oferta sin salario muestra **Salario no informado** y no se considera automáticamente un incumplimiento.
+
+El nivel educativo se lee del título ya guardado en cada estudio del perfil y se infiere solo si aparece expresamente (por ejemplo, “Tecnólogo en…” o “Profesional en…”). No se deduce el nivel a partir del área de estudio; “Administración de Empresas” por sí sola queda como dato por verificar si la oferta exige un nivel. No se agregó ningún campo ni se requiere una migración de base de datos para esta clasificación. Los resultados de cada fuente siguen limitados a los datos que esa fuente entregue; revisa el anuncio original antes de postularte.
+
 ## Filtro por día en que se encontró
 
 En **Ofertas**, el filtro muestra las vacantes encontradas el lunes, martes, etc. de la semana actual. La fecha visible como **Encontrada el** es el día en que la oferta entró a tu bandeja, no necesariamente su fecha original de publicación. Esta fecha siempre está disponible; cuando una fuente también proporciona la fecha de publicación, se muestra en una etiqueta aparte.

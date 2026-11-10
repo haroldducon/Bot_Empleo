@@ -81,7 +81,7 @@ export const api = {
   gmailSelectLabel: (label_id) =>
     request("/gmail/label", { method: "PUT", body: { label_id } }),
   gmailDisconnect: () => request("/gmail/connection", { method: "DELETE" }),
-  listJobs: (minScore = 0) => request(`/jobs?min_score=${minScore}&limit=300`),
+  listJobs: (minScore = 30) => request(`/jobs?min_score=${minScore}&limit=300`),
   dismissJob: (id) => request(`/jobs/${id}/dismiss`, { method: "POST" }),
   analyzeJob: (id, provider = "gemini") =>
     request(`/jobs/${id}/analyze`, { method: "POST", body: { provider } }),

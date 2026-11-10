@@ -136,7 +136,7 @@ def run_search(user_id: int, sources: list[str]) -> None:
                     if fp:
                         known[fp] = job.id
 
-                score, matched = score_job(p, j.title, j.text)
+                score, matched = score_job(p, j.title, j.text, j.location)
                 uj = db.scalar(
                     select(UserJob).where(
                         UserJob.user_id == user_id, UserJob.job_id == job.id

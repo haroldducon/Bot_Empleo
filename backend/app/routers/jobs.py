@@ -89,6 +89,10 @@ class JobOut(BaseModel):
     score: int
     matched_terms: list[str]
     criteria: list[CriterionOut]
+    classification: str
+    review_reasons: list[str]
+    evidence_coverage: int
+    salary_status: str
     created_at: datetime
     published_at: datetime | None
     ai: dict | None = None
@@ -224,7 +228,7 @@ def weekly_analytics(
 
 @router.get("/jobs", response_model=list[JobOut])
 def list_jobs(
-    min_score: int = Query(0, ge=0, le=100),
+    min_score: int = Query(30, ge=0, le=100),
     limit: int = Query(100, ge=1, le=300),
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
@@ -247,8 +251,12 @@ def list_jobs(
     # El puntaje se recalcula con el perfil actual, así siempre está al día
     items = []
     for uj, j in rows:
-        r = explain_job(profile, j.title, j.text)
-        if r["score"] >= min_score:
+        r = explain_job(profile, j.title, j.text, j.location)
+        if r["classification"] == "excluded":
+            continue
+        if r["classification"] == "match" and r["score"] < min_score:
+            continue
+        if r["classification"] in {"match", "review"}:
             items.append((r["score"], uj.created_at, uj, j, r))
     items.sort(key=lambda item: (item[0], item[1]), reverse=True)
 
@@ -264,6 +272,10 @@ def list_jobs(
             score=score,
             matched_terms=r["matched"],
             criteria=r["criteria"],
+            classification=r["classification"],
+            review_reasons=r["review_reasons"],
+            evidence_coverage=r["evidence_coverage"],
+            salary_status=r["salary_status"],
             created_at=uj.created_at,
             published_at=j.published_at,
             ai=uj.ai_analysis,
