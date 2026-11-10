@@ -269,6 +269,7 @@ def _batch_search_locked(queries: list[str], city: str) -> list[JobData]:
                         timeout=NAVIGATION_TIMEOUT_MS,
                     )
                 except (PlaywrightTimeoutError, PlaywrightError) as exc:
+                    logger.exception("Magneto page navigation failed for %s", urlsplit(url).path)
                     raise ScraperError(
                         f"No se pudo cargar una búsqueda de Magneto ({type(exc).__name__}); se detuvo sin reintentos.",
                         partial_jobs=list(found.values()),
