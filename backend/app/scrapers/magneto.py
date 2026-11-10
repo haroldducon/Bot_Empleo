@@ -8,6 +8,7 @@ consulta los cargos secuencialmente y no reintenta errores/bloqueos.
 from __future__ import annotations
 
 import os
+import logging
 import re
 import threading
 import time
@@ -19,6 +20,8 @@ from bs4 import BeautifulSoup
 
 from app.publication_dates import parse_publication_datetime
 from app.scrapers.base import JobData, ScraperError
+
+logger = logging.getLogger(__name__)
 
 BASE = "https://www.magneto365.com"
 OFFER_PATH_PREFIX = "/co/empleos/"
@@ -333,6 +336,7 @@ def _batch_search_locked(queries: list[str], city: str) -> list[JobData]:
     except ScraperError:
         raise
     except Exception as exc:  # noqa: BLE001 - incluye errores al arrancar Chromium
+        logger.exception("Magneto scraper failed unexpectedly")
         raise ScraperError(
             f"No se pudo ejecutar la búsqueda de Magneto ({type(exc).__name__}); revisa la instalación de Chromium.",
             partial_jobs=list(found.values()),
